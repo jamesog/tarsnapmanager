@@ -50,11 +50,12 @@ func runBackup(archiveName string) {
 	log.Printf("Starting backup %s\n", archiveName)
 	args := commandArgs("-c", "-f", archiveName, cfgTarsnapArgs, cfgBackupDirs)
 	backup := exec.Command(cfgTarsnapBin, args...)
-	var out bytes.Buffer
-	backup.Stdout = &out
+	var stderr bytes.Buffer
+	backup.Stderr = &stderr
 	backuperr := backup.Run()
 	if backuperr != nil {
 		log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+		log.Println(stderr.String())
 		log.Fatal(backuperr)
 	}
 	log.Println("Backup finished")
