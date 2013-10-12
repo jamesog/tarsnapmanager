@@ -20,6 +20,7 @@ var conffile = flag.String("c", ".tsmrc", "config file")
 var cfgTarsnapBin string = "/usr/local/bin/tarsnap"
 var cfgTarsnapArgs []string
 var cfgBackupDirs []string
+var cfgExcludeFile string
 
 // Templates for time.Parse()
 const iso8601 = "2006-01-02"
@@ -133,6 +134,11 @@ func main() {
 			log.Fatal(err)
 		}
 		cfgBackupDirs = append(cfgBackupDirs, t)
+	}
+
+	cfgExcludeFile, err := config.Get("ExcludeFile")
+	if err == nil {
+		cfgTarsnapArgs = append(cfgTarsnapArgs, "-X", cfgExcludeFile)
 	}
 
 	// GetInt() returns an int64. Convert this to an int.
