@@ -73,7 +73,7 @@ func deleteBackup(backup string) {
 }
 
 // Runs expiry against backup archives
-func expireBackups(w, m time.Time) {
+func expireBackups(w, m time.Time, reallyExpire bool) {
 	listcmd := exec.Command(cfgTarsnapBin, "--list-archives")
 	var out bytes.Buffer
 	listcmd.Stdout = &out
@@ -89,10 +89,18 @@ func expireBackups(w, m time.Time) {
 		backup, _ := time.Parse(nightly, backups[i])
 		eom := time.Date(backup.Year(), backup.Month()+1, 0, 0, 0, 0, 0, backup.Location())
 		if (backup.Before(w) && backup.Day() != eom.Day()) || backup.Before(m) {
-			log.Println("Expiring backup", backups[i])
-			deleteBackup(backups[i])
+			if reallyExpire {
+				log.Println("Expiring backup", backups[i])
+				deleteBackup(backups[i])
+			} else {
+				log.Println("Expired backup", backups[i])
+			}
 		} else {
-			log.Println("Keeping backup", backups[i])
+			if reallyExpire {
+				log.Println("Keeping backup", backups[i])
+			} else {
+				log.Println("Current backup", backups[i])
+			}
 		}
 	}
 }
@@ -171,13 +179,15 @@ func main() {
 		// TODO: Make w and m global?
 		cfgExpireBackups, _ := config.GetBool("ExpireBackups")
 		if cfgExpireBackups {
-			expireBackups(w, m)
+			expireBackups(w, m, true)
 		} else {
 			log.Println("Backup expiration disabled")
 		}
 	case "adhoc":
 		// Run adhoc
 		runBackup(t.Format(adhoc))
+	case "list-expired":
+		expireBackups(w, m, false)
 	default:
 		log.Fatalf("Unknown action '%s'", action)
 	}
