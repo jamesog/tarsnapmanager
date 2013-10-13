@@ -29,6 +29,8 @@ const adhoc = "adhoc-2006-01-02_1504"
 
 const day = time.Hour * 24
 
+var info = log.New(os.Stdout, "", log.LstdFlags)
+
 // Shamefully "borrowed" from src/cmd/go/main.go
 // Flattens a mix of strings and slices of strings into a single slice.
 func commandArgs(args ...interface{}) []string {
@@ -48,26 +50,25 @@ func commandArgs(args ...interface{}) []string {
 
 // Creates a new Tarsnap archive
 func runBackup(archiveName string) {
-	log.Printf("Starting backup %s\n", archiveName)
+	info.Printf("Starting backup %s\n", archiveName)
 	args := commandArgs("-c", "-f", archiveName, cfgTarsnapArgs, cfgBackupDirs)
 	backup := exec.Command(cfgTarsnapBin, args...)
-	var stderr bytes.Buffer
-	backup.Stderr = &stderr
+	backup.Stdout = os.Stdout
+	backup.Stderr = os.Stderr
 	backuperr := backup.Run()
 	if backuperr != nil {
-		log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
-		log.Println(stderr.String())
-		log.Fatal(backuperr)
+		log.Fatal("Error running backup: ", backuperr)
 	}
-	log.Println("Backup finished")
+	info.Println("Backup finished")
 }
 
 // Deletes a Tarsnap archive
 func deleteBackup(backup string) {
 	deletecmd := exec.Command(cfgTarsnapBin, "-d", "-f", backup)
+	deletecmd.Stdout = os.Stdout
+	deletecmd.Stderr = os.Stderr
 	err := deletecmd.Run()
 	if err != nil {
-		log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
 		log.Fatal(err)
 	}
 }
@@ -75,14 +76,14 @@ func deleteBackup(backup string) {
 // Runs expiry against backup archives
 func expireBackups(w, m time.Time, reallyExpire bool) {
 	listcmd := exec.Command(cfgTarsnapBin, "--list-archives")
-	var out bytes.Buffer
-	listcmd.Stdout = &out
+	var stdout bytes.Buffer
+	listcmd.Stdout = &stdout
+	listcmd.Stderr = os.Stderr
 	listerr := listcmd.Run()
 	if listerr != nil {
-		log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
-		log.Fatal(listerr)
+		log.Fatal("Error running command: ", listerr)
 	}
-	backups := strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n")
+	backups := strings.Split(strings.TrimSuffix(stdout.String(), "\n"), "\n")
 	sort.Strings(backups)
 
 	for i := 0; i < len(backups); i++ {
@@ -94,16 +95,16 @@ func expireBackups(w, m time.Time, reallyExpire bool) {
 		eom := time.Date(backup.Year(), backup.Month()+1, 0, 0, 0, 0, 0, backup.Location())
 		if (backup.Before(w) && backup.Day() != eom.Day()) || backup.Before(m) {
 			if reallyExpire {
-				log.Println("Expiring backup", backups[i])
+				info.Println("Expiring backup", backups[i])
 				deleteBackup(backups[i])
 			} else {
-				log.Println("Expired backup", backups[i])
+				fmt.Println("Expired backup", backups[i])
 			}
 		} else {
 			if reallyExpire {
-				log.Println("Keeping backup", backups[i])
+				fmt.Println("Keeping backup", backups[i])
 			} else {
-				log.Println("Current backup", backups[i])
+				fmt.Println("Current backup", backups[i])
 			}
 		}
 	}
@@ -114,7 +115,7 @@ func main() {
 
 	config, conferr := yaml.ReadFile(*conffile)
 	if conferr != nil {
-		log.Fatalf("Read config %q: %s", *conffile, conferr)
+		log.Fatalf("Error reading config %q: %s", *conffile, conferr)
 	}
 
 	tmpTarsnapBin, _ := config.Get("TarsnapBin")
@@ -137,7 +138,8 @@ func main() {
 
 	count, err = config.Count("BackupDirs")
 	if err != nil {
-		log.Fatal("No backup directories specified")
+		fmt.Println("No backup directories specified")
+		os.Exit(1)
 	}
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("BackupDirs[%d]", i)
@@ -156,11 +158,13 @@ func main() {
 	// GetInt() returns an int64. Convert this to an int.
 	tmpKeepWeeks, err := config.GetInt("KeepWeeks")
 	if err != nil {
-		log.Fatal("Missing config value KeepWeeks")
+		fmt.Println("Missing config value KeepWeeks")
+		os.Exit(1)
 	}
 	tmpKeepMonths, err := config.GetInt("KeepMonths")
 	if err != nil {
-		log.Fatal("Missing config value KeepMonths")
+		fmt.Println("Missing config value KeepMonths")
+		os.Exit(1)
 	}
 	cfgKeepWeeks := int(tmpKeepWeeks)
 	cfgKeepMonths := int(tmpKeepMonths)
@@ -168,11 +172,11 @@ func main() {
 	t := time.Now()
 	w := t.AddDate(0, 0, -(7 * cfgKeepWeeks))
 	m := t.AddDate(0, -cfgKeepMonths, 0)
-	fmt.Printf("Date: %s\nExpire week: %s\nExpire month: %s\n", t.Format(iso8601), w.Format(iso8601), m.Format(iso8601))
-	fmt.Println()
+	fmt.Printf("Date: %s\nExpire week: %s\nExpire month: %s\n\n", t.Format(iso8601), w.Format(iso8601), m.Format(iso8601))
 
 	if len(os.Args) < 2 {
-		log.Fatal("Missing action")
+		fmt.Println("Missing action")
+		os.Exit(1)
 	}
 	action := os.Args[1]
 	switch action {
@@ -185,8 +189,10 @@ func main() {
 		if cfgExpireBackups {
 			expireBackups(w, m, true)
 		} else {
-			log.Println("Backup expiration disabled")
+			info.Println("Backup expiration disabled")
 		}
+
+		info.Println("All done!")
 	case "adhoc":
 		// Run adhoc
 		runBackup(t.Format(adhoc))
@@ -195,6 +201,4 @@ func main() {
 	default:
 		log.Fatalf("Unknown action '%s'", action)
 	}
-
-	log.Println("All done!")
 }
