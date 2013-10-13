@@ -15,6 +15,7 @@ import (
 
 // Default configuration file
 var conffile = flag.String("c", ".tsmrc", "config file")
+var showAllBackups = flag.Bool("with-current", false, "list-expired: list current backups too")
 
 // Config variables. Provide a default for tarsnap(1) path.
 var cfgTarsnapBin string = "/usr/local/bin/tarsnap"
@@ -101,9 +102,7 @@ func expireBackups(w, m time.Time, reallyExpire bool) {
 				fmt.Println("Expired backup", backups[i])
 			}
 		} else {
-			if reallyExpire {
-				fmt.Println("Keeping backup", backups[i])
-			} else {
+			if *showAllBackups && !reallyExpire {
 				fmt.Println("Current backup", backups[i])
 			}
 		}
