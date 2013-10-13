@@ -86,6 +86,10 @@ func expireBackups(w, m time.Time, reallyExpire bool) {
 	sort.Strings(backups)
 
 	for i := 0; i < len(backups); i++ {
+		// Don't expire adhoc backups
+		if strings.HasPrefix(backups[i], "adhoc-") {
+			continue
+		}
 		backup, _ := time.Parse(nightly, backups[i])
 		eom := time.Date(backup.Year(), backup.Month()+1, 0, 0, 0, 0, 0, backup.Location())
 		if (backup.Before(w) && backup.Day() != eom.Day()) || backup.Before(m) {
