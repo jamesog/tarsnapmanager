@@ -20,6 +20,10 @@ Options:
   Arguments to be passed to tarsnap. Parameters (starting with a dash) must be
   quoted in double-quotes. Quotes will be removed prior to execution.
 
+* **ExcludeFile** (string)
+
+  Path to a file which contains files/directories to be excluded from backup.
+
 * **BackupDirs** (list)
 
   Directories to be backed up.
