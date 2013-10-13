@@ -178,7 +178,7 @@ func main() {
 		fmt.Println("Missing action")
 		os.Exit(1)
 	}
-	action := os.Args[1]
+	action := flag.Args()[0]
 	switch action {
 	case "nightly":
 		// Run nightly
