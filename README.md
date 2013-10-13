@@ -46,7 +46,8 @@ Example
 ```
 TarsnapBin: /usr/bin/tarsnap
 TarsnapArgs:
- - "-X excludefile"
+ - "--quiet"
+ExcludeFile: /etc/tarsnap.exclude
 BackupDirs:
  - /etc
  - /var/log
