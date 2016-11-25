@@ -174,7 +174,7 @@ func main() {
 	m := t.AddDate(0, -cfgKeepMonths, 0)
 	fmt.Printf("Date: %s\nExpire week: %s\nExpire month: %s\n\n", t.Format(iso8601), w.Format(iso8601), m.Format(iso8601))
 
-	if len(os.Args) < 2 {
+	if len(flag.Args()) == 0 {
 		fmt.Println("Missing action")
 		os.Exit(1)
 	}
