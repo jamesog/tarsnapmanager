@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/kylelemons/go-gypsy/yaml"
 	"log"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/kylelemons/go-gypsy/yaml"
 )
 
 // Default configuration file
@@ -18,7 +19,7 @@ var conffile = flag.String("c", ".tsmrc", "config file")
 var showAllBackups = flag.Bool("with-current", false, "list-expired: list current backups too")
 
 // Config variables. Provide a default for tarsnap(1) path.
-var cfgTarsnapBin string = "/usr/local/bin/tarsnap"
+var cfgTarsnapBin = "/usr/local/bin/tarsnap"
 var cfgTarsnapArgs []string
 var cfgBackupDirs []string
 var cfgExcludeFile string
@@ -173,7 +174,7 @@ func main() {
 	m := t.AddDate(0, -cfgKeepMonths, 0)
 	fmt.Printf("Date: %s\nExpire week: %s\nExpire month: %s\n\n", t.Format(iso8601), w.Format(iso8601), m.Format(iso8601))
 
-	if len(os.Args) < 2 {
+	if len(flag.Args()) == 0 {
 		fmt.Println("Missing action")
 		os.Exit(1)
 	}
