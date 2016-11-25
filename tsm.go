@@ -19,7 +19,7 @@ var conffile = flag.String("c", ".tsmrc", "config file")
 var showAllBackups = flag.Bool("with-current", false, "list-expired: list current backups too")
 
 // Config variables. Provide a default for tarsnap(1) path.
-var cfgTarsnapBin string = "/usr/local/bin/tarsnap"
+var cfgTarsnapBin = "/usr/local/bin/tarsnap"
 var cfgTarsnapArgs []string
 var cfgBackupDirs []string
 var cfgExcludeFile string
