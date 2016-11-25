@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/kylelemons/go-gypsy/yaml"
 	"log"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/kylelemons/go-gypsy/yaml"
 )
 
 // Default configuration file
