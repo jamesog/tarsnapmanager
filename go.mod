@@ -1,4 +1,4 @@
-module tarsnapmanager
+module github.com/jamesog/tarsnapmanager
 
 go 1.12
 
